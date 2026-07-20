@@ -9,14 +9,18 @@ const {
     eliminarUsuario
 } = require("../controllers/authController");
 
+const verificarToken = require("../middlewares/authMiddleware");
+
+// Ruta pública (no requiere token)
 router.post("/usuarios", crearUsuario);
 
-router.get("/usuarios", obtenerUsuarios);
+// Rutas protegidas (requieren JWT)
+router.get("/usuarios", verificarToken, obtenerUsuarios);
 
-router.get("/usuarios/:id", obtenerUsuario);
+router.get("/usuarios/:id", verificarToken, obtenerUsuario);
 
-router.put("/usuarios/:id", actualizarUsuario);
+router.put("/usuarios/:id", verificarToken, actualizarUsuario);
 
-router.delete("/usuarios/:id", eliminarUsuario);
+router.delete("/usuarios/:id", verificarToken, eliminarUsuario);
 
 module.exports = router;

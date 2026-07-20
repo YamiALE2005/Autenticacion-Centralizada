@@ -1,4 +1,7 @@
 const Usuario = require("../models/usuarioModel");
+const jwt = require("jsonwebtoken");
+
+// Crear usuario
 const crearUsuario = async (req, res) => {
     try {
 
@@ -6,9 +9,24 @@ const crearUsuario = async (req, res) => {
 
         await usuario.save();
 
+        // Generar JWT
+        const app_token = jwt.sign(
+            {
+                id: usuario._id,
+                username: usuario.username,
+                email: usuario.email,
+                role: usuario.role
+            },
+            process.env.APP_TOKEN,
+            {
+                expiresIn: "1h"
+            }
+        );
+
         res.status(201).json({
             mensaje: "Usuario registrado correctamente",
-            usuario
+            usuario,
+            app_token
         });
 
     } catch (error) {
@@ -20,6 +38,8 @@ const crearUsuario = async (req, res) => {
 
     }
 };
+
+// Obtener todos los usuarios
 const obtenerUsuarios = async (req, res) => {
 
     try {
@@ -38,6 +58,8 @@ const obtenerUsuarios = async (req, res) => {
     }
 
 };
+
+// Obtener un usuario por ID
 const obtenerUsuario = async (req, res) => {
 
     try {
@@ -62,21 +84,19 @@ const obtenerUsuario = async (req, res) => {
     }
 
 };
+
+// Actualizar usuario
 const actualizarUsuario = async (req, res) => {
 
     try {
 
         const usuario = await Usuario.findByIdAndUpdate(
-
             req.params.id,
-
             req.body,
-
             {
                 new: true,
                 runValidators: true
             }
-
         );
 
         if (!usuario) {
@@ -102,6 +122,8 @@ const actualizarUsuario = async (req, res) => {
     }
 
 };
+
+// Eliminar usuario
 const eliminarUsuario = async (req, res) => {
 
     try {
@@ -130,16 +152,13 @@ const eliminarUsuario = async (req, res) => {
     }
 
 };
+
 module.exports = {
 
     crearUsuario,
-
     obtenerUsuarios,
-
     obtenerUsuario,
-
     actualizarUsuario,
-
     eliminarUsuario
 
 };

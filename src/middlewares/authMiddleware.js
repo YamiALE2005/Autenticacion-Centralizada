@@ -2,7 +2,14 @@ const jwt = require("jsonwebtoken");
 
 const verificarToken = (req, res, next) => {
 
-    const token = req.header("Authorization");
+    // Obtener el token de los headers comunes o de Authorization
+    const token = req.header("x-access-token") || 
+                  req.header("x-token") || 
+                  req.header("token") || 
+                  req.header("app_token") || 
+                  req.header("app-token") || 
+                  req.header("APP_TOKEN") || 
+                  req.header("Authorization");
 
     if (!token) {
         return res.status(401).json({
@@ -12,7 +19,9 @@ const verificarToken = (req, res, next) => {
 
     try {
 
-        const tokenSinBearer = token.replace("Bearer ", "");
+        // Si viene de Authorization con el prefijo "Bearer ", se lo quitamos.
+        // Si viene directo en otro header, lo usamos tal cual.
+        const tokenSinBearer = token.startsWith("Bearer ") ? token.replace("Bearer ", "") : token;
 
         // Si es el token maestro definido en .env, lo permitimos directamente
         if (tokenSinBearer === process.env.APP_TOKEN) {

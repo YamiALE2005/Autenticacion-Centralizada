@@ -11,10 +11,8 @@ const {
 
 const verificarToken = require("../middlewares/authMiddleware");
 
-// Ruta pública (no requiere token)
-router.post("/usuarios", crearUsuario);
-
 // Rutas protegidas (requieren JWT)
+router.post("/usuarios", verificarToken, crearUsuario);
 router.get("/usuarios", verificarToken, obtenerUsuarios);
 
 router.get("/usuarios/:id", verificarToken, obtenerUsuario);

@@ -1,5 +1,6 @@
 const Usuario = require("../models/usuarioModel");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
 // Crear usuario
 const crearUsuario = async (req, res) => {
@@ -9,30 +10,90 @@ const crearUsuario = async (req, res) => {
 
         await usuario.save();
 
-        // Generar JWT
-        const app_token = jwt.sign(
+        const token = jwt.sign(
             {
-                id: usuario._id,
-                username: usuario.username,
-                email: usuario.email,
-                role: usuario.role
+                sub: usuario._id.toString()
             },
-            process.env.APP_TOKEN,
+            process.env.JWT_SECRET,
             {
-                expiresIn: "1h"
+                algorithm: "HS256",
+                expiresIn: "15m"
             }
         );
 
         res.status(201).json({
             mensaje: "Usuario registrado correctamente",
             usuario,
-            app_token
+            token
         });
 
     } catch (error) {
 
         res.status(500).json({
             mensaje: "Error al registrar usuario",
+            error: error.message
+        });
+
+    }
+};
+
+// Iniciar sesión
+const login = async (req, res) => {
+    try {
+
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({
+                mensaje: "Email y contraseña son obligatorios"
+            });
+        }
+
+        const usuario = await Usuario.findOne({ email });
+
+        if (!usuario) {
+            return res.status(401).json({
+                mensaje: "Credenciales incorrectas"
+            });
+        }
+
+        if (usuario.status !== "active") {
+            return res.status(401).json({
+                mensaje: "Usuario inactivo"
+            });
+        }
+
+        const passwordCorrecta = await bcrypt.compare(
+            password,
+            usuario.password
+        );
+
+        if (!passwordCorrecta) {
+            return res.status(401).json({
+                mensaje: "Credenciales incorrectas"
+            });
+        }
+
+        const token = jwt.sign(
+            {
+                sub: usuario._id.toString()
+            },
+            process.env.JWT_SECRET,
+            {
+                algorithm: "HS256",
+                expiresIn: "15m"
+            }
+        );
+
+        res.status(200).json({
+            mensaje: "Inicio de sesión correcto",
+            token
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            mensaje: "Error al iniciar sesión",
             error: error.message
         });
 
@@ -154,11 +215,10 @@ const eliminarUsuario = async (req, res) => {
 };
 
 module.exports = {
-
     crearUsuario,
+    login,
     obtenerUsuarios,
     obtenerUsuario,
     actualizarUsuario,
     eliminarUsuario
-
 };

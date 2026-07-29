@@ -16,7 +16,7 @@ const port = process.env.PORT || 5100;
 app.use(express.json());
 
 // Rutas
-app.use("/api", authRoutes);
+app.use("/api/auth", authRoutes);
 
 app.listen(port, () => {
     console.log(`Servidor ejecutándose en el puerto ${port}`);

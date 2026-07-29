@@ -2,47 +2,40 @@ const jwt = require("jsonwebtoken");
 
 const verificarToken = (req, res, next) => {
 
-    // Obtener el token de los headers comunes o de Authorization
-    const token = req.header("x-access-token") || 
-                  req.header("x-token") || 
-                  req.header("token") || 
-                  req.header("app_token") || 
-                  req.header("app-token") || 
-                  req.header("APP_TOKEN") || 
-                  req.header("Authorization");
+    // Obtener el header Authorization
+    const authHeader = req.header("Authorization");
 
-    if (!token) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return res.status(401).json({
             mensaje: "Acceso denegado. Token requerido."
         });
     }
 
+    // Extraer únicamente el JWT
+    const token = authHeader.split(" ")[1];
+
     try {
 
-        // Si viene de Authorization con el prefijo "Bearer ", se lo quitamos.
-        // Si viene directo en otro header, lo usamos tal cual.
-        const tokenSinBearer = token.startsWith("Bearer ") ? token.replace("Bearer ", "") : token;
-
-        // Si es el token maestro definido en .env, lo permitimos directamente
-        if (tokenSinBearer === process.env.APP_TOKEN) {
-            const verificado = jwt.decode(tokenSinBearer);
-            req.usuario = verificado || { username: "master_user", role: "admin" };
-            return next();
-        }
-
-        const verificado = jwt.verify(
-            tokenSinBearer,
-            process.env.APP_TOKEN
+        // Verificar el token
+        const decoded = jwt.verify(
+            token,
+            process.env.JWT_SECRET,
+            {
+                algorithms: ["HS256"]
+            }
         );
 
-        req.usuario = verificado;
+        // Guardar la información del usuario autenticado
+        req.auth = {
+            userId: decoded.sub
+        };
 
         next();
 
     } catch (error) {
 
         return res.status(401).json({
-            mensaje: "Token inválido"
+            mensaje: "Token inválido o expirado."
         });
 
     }
